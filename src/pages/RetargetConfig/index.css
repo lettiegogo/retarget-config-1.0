@@ -1,0 +1,53 @@
+/* 二次触达配置页面样式 */
+
+/* 主题色变量 */
+:root {
+  --primary-color: #1050DC;
+}
+
+/* 页面容器 */
+.retarget-config-page {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 24px;
+}
+
+/* 头部操作区 */
+.page-header {
+  margin-bottom: 24px;
+}
+
+/* 内容卡片 */
+.content-card {
+  background: #fff;
+  border-radius: 8px;
+}
+
+/* 场景选择卡片 */
+.scene-card {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.scene-card:hover {
+  border-color: var(--primary-color);
+}
+
+.scene-card-checked {
+  border-color: var(--primary-color) !important;
+  background-color: #f0f5ff;
+}
+
+/* 配置信息区域 */
+.config-info {
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+/* 人群信息区域 */
+.audience-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}

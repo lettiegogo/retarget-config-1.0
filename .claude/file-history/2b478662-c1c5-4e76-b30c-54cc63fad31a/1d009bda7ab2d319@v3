@@ -1,0 +1,42 @@
+import React, { useState } from 'react';
+import { ConfigProvider, Button } from 'antd';
+import RetargetConfigModalV2 from './pages/RetargetConfig/index_v2';
+
+// 主题色
+const PRIMARY_COLOR = '#1050DC';
+
+const App: React.FC = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleConfirm = (values: any) => {
+    console.log('提交的数据:', values);
+    alert('配置已提交，请查看控制台输出');
+    setModalOpen(false);
+  };
+
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: PRIMARY_COLOR,
+          fontFamily: 'PingFang SC, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        },
+      }}
+    >
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <h1>二次触达配置演示</h1>
+        <Button type="primary" onClick={() => setModalOpen(true)}>
+          打开配置弹窗
+        </Button>
+
+        <RetargetConfigModalV2
+          open={modalOpen}
+          onCancel={() => setModalOpen(false)}
+          onConfirm={handleConfirm}
+        />
+      </div>
+    </ConfigProvider>
+  );
+};
+
+export default App;

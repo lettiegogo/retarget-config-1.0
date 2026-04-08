@@ -1,0 +1,553 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Modal,
+  Form,
+  Select,
+  Button,
+  Radio,
+  Input,
+  Switch,
+  DatePicker,
+  Card,
+  Divider,
+  ConfigProvider,
+  Space,
+  Typography,
+  message,
+  Alert,
+} from 'antd';
+import dayjs from 'dayjs';
+import { canvasList, defaultCanvasId, type CanvasOption } from '../../mock/retargetConfig';
+
+const { Text } = Typography;
+const { Option } = Select;
+
+// 主题色
+const PRIMARY_COLOR = '#1050DC';
+
+// 模拟已构建的二次触达配置
+interface RetargetPreset {
+  id: string;
+  name: string;
+  status: 'building' | 'completed';
+  scene: string;
+  couponIds: string[];
+  dateRange?: [string, string];
+  issueDate?: string;
+  isUpdateEnabled: boolean;
+  expiryDate?: string;
+  createdAt: string;
+}
+
+const retargetPresets: RetargetPreset[] = [
+  {
+    id: 'preset-1',
+    name: '新用户领券未核销召回',
+    status: 'completed',
+    scene: 'unverified',
+    couponIds: ['coupon-1'],
+    issueDate: '2026-04-01',
+    isUpdateEnabled: true,
+    expiryDate: '2026-05-01',
+    createdAt: '2026-04-05 10:30:00',
+  },
+  {
+    id: 'preset-2',
+    name: '会员日券已核销复购',
+    status: 'building',
+    scene: 'verified',
+    couponIds: ['coupon-4', 'coupon-5'],
+    dateRange: ['2026-03-01', '2026-03-31'],
+    isUpdateEnabled: false,
+    createdAt: '2026-04-06 14:20:00',
+  },
+];
+
+// 样式定义 - 使用 antd 的 style prop
+const styles = {
+  sectionTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#333',
+    marginBottom: '8px',
+  },
+  configInfoStyle: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: '6px',
+    padding: '12px 16px',
+    marginTop: '8px',
+  },
+  dividerStyle: {
+    margin: '16px 0',
+  },
+  radioCard: {
+    display: 'block',
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: '1px solid #d9d9d9',
+    transition: 'all 0.3s',
+    cursor: 'pointer',
+  },
+};
+
+interface RetargetConfigModalProps {
+  open: boolean;
+  onCancel: () => void;
+  onConfirm: (values: any) => void;
+}
+
+const RetargetConfigModal: React.FC<RetargetConfigModalProps> = ({
+  open,
+  onCancel,
+  onConfirm,
+}) => {
+  const [form] = Form.useForm();
+  const [selectedCanvas, setSelectedCanvas] = useState<CanvasOption | null>(null);
+  const [configExpanded, setConfigExpanded] = useState(false);
+  const [isLoop, setIsLoop] = useState(false);
+  const [isUpdateEnabled, setIsUpdateEnabled] = useState(false);
+  const [selectedScene, setSelectedScene] = useState('unverified');
+
+  // 新增状态
+  const [configMode, setConfigMode] = useState<'create' | 'select'>('create');
+  const [selectedPreset, setSelectedPreset] = useState<RetargetPreset | null>(null);
+  const [isBuilding, setIsBuilding] = useState(false);
+  const [buildProgress, setBuildProgress] = useState(0);
+
+  // 初始化表单数据
+  useEffect(() => {
+    if (open) {
+      const defaultCanvas = canvasList.find(c => c.id === defaultCanvasId);
+      if (defaultCanvas) {
+        setSelectedCanvas(defaultCanvas);
+        form.setFieldsValue({
+          canvasId: defaultCanvas.id,
+          isLoop: defaultCanvas.isLoop,
+        });
+        setIsLoop(defaultCanvas.isLoop);
+      }
+      // 重置状态
+      setConfigMode('create');
+      setSelectedPreset(null);
+      setIsBuilding(false);
+      setBuildProgress(0);
+    }
+  }, [open, form]);
+
+  // 模拟人群构建进度
+  useEffect(() => {
+    if (isBuilding && buildProgress < 100) {
+      const timer = setTimeout(() => {
+        setBuildProgress(prev => {
+          const next = prev + 10;
+          if (next >= 100) {
+            setIsBuilding(false);
+            message.success('人群构建完成！');
+          }
+          return next;
+        });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isBuilding, buildProgress]);
+
+  // 处理画布选择变化
+  const handleCanvasChange = (canvasId: string) => {
+    const canvas = canvasList.find(c => c.id === canvasId);
+    if (canvas) {
+      setSelectedCanvas(canvas);
+      form.setFieldsValue({
+        isLoop: canvas.isLoop,
+        couponIds: canvas.coupons.length === 1 ? [canvas.coupons[0].id] : [],
+      });
+      setIsLoop(canvas.isLoop);
+
+      // 非循环类型自动填充发券日期
+      if (!canvas.isLoop) {
+        form.setFieldsValue({
+          issueDate: dayjs(canvas.execTime),
+        });
+      }
+    }
+  };
+
+  // 处理配置模式切换
+  const handleConfigModeChange = (e: any) => {
+    const mode = e.target.value;
+    setConfigMode(mode);
+    setSelectedPreset(null);
+    form.resetFields(['presetId']);
+  };
+
+  // 处理已构建配置选择
+  const handlePresetSelect = (presetId: string) => {
+    const preset = retargetPresets.find(p => p.id === presetId);
+    if (preset) {
+      setSelectedPreset(preset);
+      // 填充表单数据用于展示
+      form.setFieldsValue({
+        scene: preset.scene,
+        couponIds: preset.couponIds,
+        dateRange: preset.dateRange,
+        issueDate: preset.issueDate ? dayjs(preset.issueDate) : undefined,
+        audienceName: preset.name,
+        isUpdateEnabled: preset.isUpdateEnabled,
+        expiryDate: preset.expiryDate ? dayjs(preset.expiryDate) : undefined,
+      });
+      setSelectedScene(preset.scene);
+      setIsUpdateEnabled(preset.isUpdateEnabled);
+    }
+  };
+
+  // 处理自动更新开关变化
+  const handleUpdateSwitchChange = (checked: boolean) => {
+    setIsUpdateEnabled(checked);
+    if (checked) {
+      // 默认 30 天有效期
+      form.setFieldsValue({
+        expiryDate: dayjs().add(30, 'day'),
+      });
+    }
+  };
+
+  // 保存配置（构建人群）
+  const handleSave = () => {
+    form.validateFields().then(() => {
+      setIsBuilding(true);
+      setBuildProgress(0);
+      message.info('正在构建人群，请稍候...');
+    }).catch(info => {
+      console.log('表单校验失败:', info);
+      message.error('请填写完整信息');
+    });
+  };
+
+  // 表单提交
+  const handleSubmit = () => {
+    if (selectedPreset) {
+      // 选择已构建的配置
+      onConfirm({
+        mode: 'select',
+        preset: selectedPreset,
+        canvasInfo: selectedCanvas,
+      });
+      message.success('正在跳转至画布配置页面...');
+    } else {
+      // 新建配置
+      if (isBuilding) {
+        message.warning('人群正在构建中，请等待构建完成');
+        return;
+      }
+      form.validateFields().then(values => {
+        onConfirm({
+          mode: 'create',
+          ...values,
+          canvasInfo: selectedCanvas,
+          isUpdateEnabled,
+        });
+        message.success('配置已保存，正在跳转至画布配置页面...');
+      }).catch(info => {
+        console.log('表单校验失败:', info);
+        message.error('请填写完整信息');
+      });
+    }
+  };
+
+  // 画布选项渲染 - 名称 + 创建人
+  const renderCanvasOption = (canvas: CanvasOption) => (
+    <Option key={canvas.id} value={canvas.id}>
+      {canvas.name} (创建人：{canvas.creator})
+    </Option>
+  );
+
+  // 搜索过滤 - 支持按画布名称模糊搜索
+  const filterCanvasOption = (input: string, option?: React.ReactElement) => {
+    if (!option) return false;
+    const canvas = canvasList.find(c => c.id === option.key);
+    return canvas?.name.toLowerCase().includes(input.toLowerCase()) || false;
+  };
+
+  // 已构建配置选项渲染
+  const renderPresetOption = (preset: RetargetPreset) => {
+    const statusText = preset.status === 'building' ? '构建中' : '已完成';
+    const statusColor = preset.status === 'building' ? '#faad14' : '#52c41a';
+    return (
+      <Option key={preset.id} value={preset.id}>
+        <Space>
+          <span>{preset.name}</span>
+          <span style={{ color: statusColor, fontSize: '12px' }}>{statusText}</span>
+        </Space>
+      </Option>
+    );
+  };
+
+  const isGoButtonDisabled = configMode === 'create' && (isBuilding || buildProgress < 100)
+    || (configMode === 'select' && selectedPreset?.status === 'building');
+
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: PRIMARY_COLOR,
+          fontFamily: 'PingFang SC, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        },
+      }}
+    >
+      <Modal
+        title={<div style={{ textAlign: 'center', width: '100%' }}>二次触达</div>}
+        open={open}
+        onCancel={onCancel}
+        width={720}
+        footer={[
+          <Button key="cancel" onClick={onCancel}>
+            取消
+          </Button>,
+          <Button key="save" onClick={handleSave} disabled={configMode === 'select'}>
+            保存
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            onClick={handleSubmit}
+            disabled={isGoButtonDisabled}
+          >
+            {isBuilding ? '构建中...' : '去配置画布'}
+          </Button>,
+        ]}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            scene: 'unverified',
+            couponIds: [],
+            isUpdateEnabled: false,
+          }}
+        >
+          {/* 区域一：关联画布 */}
+          <div style={styles.sectionTitle}>关联画布</div>
+
+          {/* 关联画布 - 只读显示 */}
+          <Form.Item
+            label="关联画布"
+            name="canvasId"
+            rules={[{ required: true, message: '请选择关联画布' }]}
+            style={{ marginBottom: '4px' }}
+          >
+            <Select
+              showSearch
+              placeholder="请选择关联画布"
+              onChange={handleCanvasChange}
+              filterOption={filterCanvasOption}
+              optionFilterProp="children"
+              disabled
+            >
+              {canvasList.map(canvas => renderCanvasOption(canvas))}
+            </Select>
+          </Form.Item>
+
+          {/* 展开/折叠画布配置信息 */}
+          <Form.Item label=" " style={{ marginBottom: '8px' }}>
+            <Button
+              type="link"
+              onClick={() => setConfigExpanded(!configExpanded)}
+              style={{ padding: 0, height: 'auto', marginLeft: '-12px' }}
+            >
+              {configExpanded ? '收起' : '查看'}关联画布配置信息
+            </Button>
+          </Form.Item>
+
+          {configExpanded && selectedCanvas && (
+            <Card size="small" style={styles.configInfoStyle}>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <div>
+                  <Text type="secondary">是否循环：</Text>
+                  <Text>{selectedCanvas.isLoop ? '是' : '否'}</Text>
+                </div>
+                <div>
+                  <Text type="secondary">起止时间：</Text>
+                  <Text>{selectedCanvas.startDate} ~ {selectedCanvas.endDate}</Text>
+                </div>
+                {selectedCanvas.isLoop && (
+                  <div>
+                    <Text type="secondary">执行时间：</Text>
+                    <Text>{selectedCanvas.execTime}</Text>
+                  </div>
+                )}
+              </Space>
+            </Card>
+          )}
+
+          <Divider style={styles.dividerStyle} />
+
+          {/* 区域二：二次触达配置 */}
+          <div style={styles.sectionTitle}>二次触达配置</div>
+
+          {/* 配置模式选择 */}
+          <Form.Item label=" ">
+            <Radio.Group
+              value={configMode}
+              onChange={handleConfigModeChange}
+              optionType="button"
+              buttonStyle="solid"
+            >
+              <Radio.Button value="create">创建新的二次触达配置</Radio.Button>
+              <Radio.Button value="select">选择已保存的二次触达配置</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
+          {/* 选择已构建的配置 */}
+          {configMode === 'select' && (
+            <Form.Item
+              label="选择已保存配置"
+              name="presetId"
+              rules={[{ required: true, message: '请选择已保存的配置' }]}
+            >
+              <Select
+                placeholder="请选择已保存的二次触达配置"
+                onChange={handlePresetSelect}
+              >
+                {retargetPresets.map(preset => renderPresetOption(preset))}
+              </Select>
+            </Form.Item>
+          )}
+
+          {/* 新建配置表单 - 只在选择创建新模式或已选择预设后显示 */}
+          {(configMode === 'create' || (configMode === 'select' && selectedPreset)) && (
+            <>
+              {/* 二次触达场景 */}
+              <Form.Item
+                label="二次触达场景"
+                name="scene"
+                rules={[{ required: true, message: '请选择二次触达场景' }]}
+              >
+                <Radio.Group
+                  value={selectedScene}
+                  onChange={(e) => setSelectedScene(e.target.value)}
+                  disabled={configMode === 'select' && selectedPreset !== null}
+                >
+                  <Space direction="vertical" style={{ width: '100%' }} size="small">
+                    <div
+                      style={{
+                        ...styles.radioCard,
+                        borderColor: selectedScene === 'unverified' ? PRIMARY_COLOR : '#d9d9d9',
+                        backgroundColor: selectedScene === 'unverified' ? `${PRIMARY_COLOR}08` : 'transparent',
+                      }}
+                    >
+                      <Radio value="unverified">
+                        领券未核销（触达人群为画布上一轮发券后，领券但未核销的用户）
+                      </Radio>
+                    </div>
+                    <div
+                      style={{
+                        ...styles.radioCard,
+                        borderColor: selectedScene === 'verified' ? PRIMARY_COLOR : '#d9d9d9',
+                        backgroundColor: selectedScene === 'verified' ? `${PRIMARY_COLOR}08` : 'transparent',
+                      }}
+                    >
+                      <Radio value="verified">
+                        领券已核销（触达人群为画布上一轮发券后，领券且已核销的用户）
+                      </Radio>
+                    </div>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+
+              {/* 已发放的优惠券 */}
+              <Form.Item
+                label="已发放的优惠券"
+                name="couponIds"
+                rules={[{ required: true, message: '请选择优惠券' }]}
+              >
+                <Select
+                  mode="multiple"
+                  placeholder="请选择优惠券"
+                  disabled={configMode === 'select' && selectedPreset !== null}
+                  allowClear
+                >
+                  {selectedCanvas?.coupons.map(coupon => (
+                    <Option key={coupon.id} value={coupon.id}>
+                      {coupon.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              {/* 发券日期 */}
+              <Form.Item
+                label="发券日期"
+                name="dateRangeOrIssue"
+                rules={[{ required: true, message: '请选择发券日期' }]}
+              >
+                {isLoop ? (
+                  <DatePicker.RangePicker placeholder={['开始日期', '结束日期']} style={{ width: '100%' }}
+                    disabled={configMode === 'select' && selectedPreset !== null} />
+                ) : (
+                  <DatePicker disabled style={{ width: '100%' }}
+                    disabledDate={() => false} />
+                )}
+              </Form.Item>
+
+              {/* 二次触达人群名称 */}
+              <Form.Item
+                label="二次触达人群名称"
+                name="audienceName"
+                rules={[{ required: true, message: '请输入人群名称' }]}
+              >
+                <Input placeholder="请输入人群名称"
+                  disabled={configMode === 'select' && selectedPreset !== null} />
+              </Form.Item>
+
+              {/* 是否更新及有效期 */}
+              <Form.Item
+                label="自动更新"
+                name="isUpdateEnabled"
+                rules={[{ required: true, message: '请选择是否开启自动更新' }]}
+              >
+                <Space>
+                  <Switch
+                    checked={isUpdateEnabled}
+                    onChange={handleUpdateSwitchChange}
+                    disabled={configMode === 'select' && selectedPreset !== null}
+                  />
+                  <span>{isUpdateEnabled ? '开启' : '关闭'}</span>
+                </Space>
+                {isUpdateEnabled && (
+                  <Space style={{ marginLeft: '16px' }}>
+                    <Text type="secondary">人群有效期：</Text>
+                    <DatePicker
+                      disabled={configMode === 'select' && selectedPreset !== null} />
+                  </Space>
+                )}
+              </Form.Item>
+
+              {/* 人群构建进度提示 - 仅新建模式显示 */}
+              {configMode === 'create' && isBuilding && (
+                <Alert
+                  message={`人群构建中：${buildProgress}%`}
+                  description="人群构建完成后，方可点击「去配置画布」"
+                  type="info"
+                  showIcon
+                  style={{ marginBottom: '16px' }}
+                />
+              )}
+              {configMode === 'create' && buildProgress === 100 && !isBuilding && (
+                <Alert
+                  message="人群构建完成"
+                  description="可以点击「去配置画布」继续配置"
+                  type="success"
+                  showIcon
+                  style={{ marginBottom: '16px' }}
+                />
+              )}
+            </>
+          )}
+
+        </Form>
+      </Modal>
+    </ConfigProvider>
+  );
+};
+
+export default RetargetConfigModal;

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/liuyuting1/**)",
+      "Bash(mkdir -p src-backup)",
+      "Bash(cp -r src/* src-backup/)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

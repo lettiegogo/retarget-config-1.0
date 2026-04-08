@@ -1,0 +1,4 @@
+{
+  "skipDangerousModePermissionPrompt": true,
+  "model": "qwen3.6-plus"
+}

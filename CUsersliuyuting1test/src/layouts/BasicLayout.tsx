@@ -1,0 +1,72 @@
+import { Layout, Menu, theme } from 'antd';
+import { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+
+const { Header, Content, Sider } = Layout;
+
+interface MenuItem {
+  key: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+export default function BasicLayout() {
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+
+  const menuItems: MenuItem[] = [
+    {
+      key: '/',
+      label: '首页',
+    },
+  ];
+
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      <Header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          background: colorBgContainer,
+          padding: '0 24px',
+        }}
+      >
+        <h2 style={{ margin: 0, marginLeft: collapsed ? 16 : 24 }}>
+          原型系统
+        </h2>
+      </Header>
+      <Layout>
+        <Sider
+          collapsible
+          collapsed={collapsed}
+          onCollapse={(value) => setCollapsed(value)}
+          style={{ background: colorBgContainer }}
+        >
+          <Menu
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={menuItems}
+            onClick={({ key }) => navigate(key)}
+          />
+        </Sider>
+        <Layout style={{ padding: '0 24px 24px' }}>
+          <Content
+            style={{
+              padding: 24,
+              margin: 0,
+              minHeight: 280,
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Outlet />
+          </Content>
+        </Layout>
+      </Layout>
+    </Layout>
+  );
+}

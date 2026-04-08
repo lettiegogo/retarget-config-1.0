@@ -1,0 +1,97 @@
+export interface Canvas {
+  id: number;
+  name: string;
+  description: string;
+  status: 'draft' | 'active' | 'paused' | 'ended';
+  creator: string;
+  createdAt: string;
+  updatedAt: string;
+  audienceCount: number;
+  hasSecondReach: boolean;
+  secondReachCanvasId?: number;
+  secondReachCanvasName?: string;
+}
+
+export const mockCanvasList: Canvas[] = [
+  {
+    id: 1,
+    name: '新用户引导画布',
+    description: '针对新注册用户的引导流程，包含产品功能介绍和优惠券发放',
+    status: 'active',
+    creator: '张三',
+    createdAt: '2025-03-01 10:00:00',
+    updatedAt: '2025-03-15 14:30:00',
+    audienceCount: 15680,
+    hasSecondReach: true,
+    secondReachCanvasId: 3,
+    secondReachCanvasName: '新用户二次触达画布',
+  },
+  {
+    id: 2,
+    name: '活动促销画布',
+    description: '618 大促活动推送，包含多轮触达策略',
+    status: 'active',
+    creator: '李四',
+    createdAt: '2025-03-05 09:00:00',
+    updatedAt: '2025-03-20 16:45:00',
+    audienceCount: 89200,
+    hasSecondReach: false,
+  },
+  {
+    id: 3,
+    name: '新用户二次触达画布',
+    description: '针对已完成新用户引导画布的用户进行二次触达',
+    status: 'active',
+    creator: '张三',
+    createdAt: '2025-03-10 11:00:00',
+    updatedAt: '2025-03-18 10:00:00',
+    audienceCount: 8500,
+    hasSecondReach: false,
+    secondReachCanvasId: 1,
+    secondReachCanvasName: '新用户引导画布',
+  },
+  {
+    id: 4,
+    name: '沉默用户唤醒画布',
+    description: '针对 30 天未登录用户的唤醒策略',
+    status: 'draft',
+    creator: '王五',
+    createdAt: '2025-03-20 14:00:00',
+    updatedAt: '2025-03-25 09:15:00',
+    audienceCount: 0,
+    hasSecondReach: false,
+  },
+  {
+    id: 5,
+    name: '会员续费提醒画布',
+    description: '会员到期前 7 天、3 天、1 天的续费提醒',
+    status: 'paused',
+    creator: '赵六',
+    createdAt: '2025-02-15 08:30:00',
+    updatedAt: '2025-03-10 11:20:00',
+    audienceCount: 23400,
+    hasSecondReach: true,
+    secondReachCanvasId: 6,
+    secondReachCanvasName: '会员续费二次触达',
+  },
+  {
+    id: 6,
+    name: '会员续费二次触达',
+    description: '针对首次触达后未续费用户的二次触达策略',
+    status: 'active',
+    creator: '赵六',
+    createdAt: '2025-02-20 10:00:00',
+    updatedAt: '2025-03-12 15:30:00',
+    audienceCount: 12100,
+    hasSecondReach: false,
+    secondReachCanvasId: 5,
+    secondReachCanvasName: '会员续费提醒画布',
+  },
+];
+
+export const statusMap: Record<Canvas['status'], { text: string; color: string }> = {
+  draft: { text: '草稿', color: 'default' },
+  active: { text: '进行中', color: 'success' },
+  paused: { text: '已暂停', color: 'warning' },
+  ended: { text: '已结束', color: 'error' },
+};

@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Claude
+.claude/backups/
+.claude/cache/
+.claude/sessions/
+.claude/tasks/
+.claude/telemetry/
+.claude/history.jsonl
+
+# System files - exclude all user profile files
+.MUMUVMM/
+.antigravity/
+.gemini/
+.gitconfig
+.lesshst
+.npmrc
+.ssh/
+.trae-aicc/
+.trae-cn/
+AppData/
+Contacts/
+Desktop/
+Documents/
+Downloads/
+Favorites/
+Links/
+Music/
+NTUSER.DAT*
+Pictures/
+Saved Games/
+Searches/
+TOSHIBA/
+Videos/
+WPS Cloud Files/
+WPSDrive/
+ai_completion/
+hello.py
+install.cmd
+ntuser.dat.LOG*
+ntuser.ini
+package-lock.json
+src-backup/
+~/
+"C*Usersliuyuting1test/"

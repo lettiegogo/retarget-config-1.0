@@ -1,0 +1,347 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Modal,
+  Form,
+  Select,
+  Button,
+  Radio,
+  Input,
+  Switch,
+  DatePicker,
+  Card,
+  Divider,
+  ConfigProvider,
+  Space,
+  Typography,
+  message,
+} from 'antd';
+import dayjs from 'dayjs';
+import { canvasList, defaultCanvasId, type CanvasOption } from '../../mock/retargetConfig';
+
+const { Text } = Typography;
+const { Option } = Select;
+
+// 主题色
+const PRIMARY_COLOR = '#1050DC';
+
+// 样式定义 - 使用 antd 的 style prop
+const styles = {
+  sectionTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#333',
+    marginBottom: '16px',
+  },
+  configInfoStyle: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: '6px',
+    padding: '12px 16px',
+    marginTop: '8px',
+  },
+  dividerStyle: {
+    margin: '16px 0',
+  },
+  radioCard: {
+    display: 'block',
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    border: '1px solid #d9d9d9',
+    transition: 'all 0.3s',
+    cursor: 'pointer',
+  },
+};
+
+interface RetargetConfigModalProps {
+  open: boolean;
+  onCancel: () => void;
+  onConfirm: (values: any) => void;
+}
+
+const RetargetConfigModal: React.FC<RetargetConfigModalProps> = ({
+  open,
+  onCancel,
+  onConfirm,
+}) => {
+  const [form] = Form.useForm();
+  const [selectedCanvas, setSelectedCanvas] = useState<CanvasOption | null>(null);
+  const [configExpanded, setConfigExpanded] = useState(false);
+  const [isLoop, setIsLoop] = useState(false);
+  const [isUpdateEnabled, setIsUpdateEnabled] = useState(false);
+  const [selectedScene, setSelectedScene] = useState('unverified');
+
+  // 初始化表单数据
+  useEffect(() => {
+    if (open) {
+      const defaultCanvas = canvasList.find(c => c.id === defaultCanvasId);
+      if (defaultCanvas) {
+        setSelectedCanvas(defaultCanvas);
+        form.setFieldsValue({
+          canvasId: defaultCanvas.id,
+          isLoop: defaultCanvas.isLoop,
+        });
+        setIsLoop(defaultCanvas.isLoop);
+      }
+    }
+  }, [open, form]);
+
+  // 处理画布选择变化
+  const handleCanvasChange = (canvasId: string) => {
+    const canvas = canvasList.find(c => c.id === canvasId);
+    if (canvas) {
+      setSelectedCanvas(canvas);
+      form.setFieldsValue({
+        isLoop: canvas.isLoop,
+        couponIds: canvas.coupons.length === 1 ? [canvas.coupons[0].id] : [],
+      });
+      setIsLoop(canvas.isLoop);
+
+      // 非循环类型自动填充发券日期
+      if (!canvas.isLoop) {
+        form.setFieldsValue({
+          issueDate: dayjs(canvas.execTime),
+        });
+      }
+    }
+  };
+
+  // 画布选项渲染 - 名称 + 创建人
+  const renderCanvasOption = (canvas: CanvasOption) => (
+    <Option key={canvas.id} value={canvas.id}>
+      {canvas.name} (创建人：{canvas.creator})
+    </Option>
+  );
+
+  // 搜索过滤 - 支持按画布名称模糊搜索
+  const filterCanvasOption = (input: string, option?: React.ReactElement) => {
+    if (!option) return false;
+    const canvas = canvasList.find(c => c.id === option.key);
+    return canvas?.name.toLowerCase().includes(input.toLowerCase()) || false;
+  };
+
+  // 处理自动更新开关变化
+  const handleUpdateSwitchChange = (checked: boolean) => {
+    setIsUpdateEnabled(checked);
+    if (checked) {
+      // 默认 30 天有效期
+      form.setFieldsValue({
+        expiryDate: dayjs().add(30, 'day'),
+      });
+    }
+  };
+
+  // 表单提交
+  const handleSubmit = () => {
+    form.validateFields().then(values => {
+      onConfirm({
+        ...values,
+        canvasInfo: selectedCanvas,
+        isUpdateEnabled,
+      });
+      message.success('配置已提交，正在跳转至画布配置页面...');
+    }).catch(info => {
+      console.log('表单校验失败:', info);
+      message.error('请填写完整信息');
+    });
+  };
+
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: PRIMARY_COLOR,
+          fontFamily: 'PingFang SC, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        },
+      }}
+    >
+      <Modal
+        title="二次触达配置"
+        open={open}
+        onCancel={onCancel}
+        width={720}
+        footer={[
+          <Button key="cancel" onClick={onCancel}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSubmit}>
+            去配置画布
+          </Button>,
+        ]}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            scene: 'unverified',
+            couponIds: [],
+          }}
+        >
+          {/* 区域一：画布与发券配置 */}
+          <div style={styles.sectionTitle}>配置触达场景</div>
+
+          {/* 关联画布 */}
+          <Form.Item
+            label="关联画布"
+            name="canvasId"
+            rules={[{ required: true, message: '请选择关联画布' }]}
+            style={{ marginBottom: '4px' }}
+          >
+            <Select
+              showSearch
+              placeholder="请选择关联画布"
+              onChange={handleCanvasChange}
+              filterOption={filterCanvasOption}
+              optionFilterProp="children"
+            >
+              {canvasList.map(canvas => renderCanvasOption(canvas))}
+            </Select>
+          </Form.Item>
+
+          {/* 展开/折叠画布配置信息 */}
+          <Form.Item label=" " style={{ marginBottom: '8px' }}>
+            <Button
+              type="link"
+              onClick={() => setConfigExpanded(!configExpanded)}
+              style={{ padding: 0, height: 'auto', marginLeft: '-12px' }}
+            >
+              {configExpanded ? '收起' : '查看'}关联画布配置信息
+            </Button>
+          </Form.Item>
+
+          {configExpanded && selectedCanvas && (
+            <Card size="small" style={styles.configInfoStyle}>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <div>
+                  <Text type="secondary">是否循环：</Text>
+                  <Text>{selectedCanvas.isLoop ? '是' : '否'}</Text>
+                </div>
+                <div>
+                  <Text type="secondary">起止时间：</Text>
+                  <Text>{selectedCanvas.startDate} ~ {selectedCanvas.endDate}</Text>
+                </div>
+                {selectedCanvas.isLoop && (
+                  <div>
+                    <Text type="secondary">执行时间：</Text>
+                    <Text>{selectedCanvas.execTime}</Text>
+                  </div>
+                )}
+              </Space>
+            </Card>
+          )}
+
+          {/* 二次触达场景 */}
+          <Form.Item
+            label="二次触达场景"
+            name="scene"
+            rules={[{ required: true, message: '请选择二次触达场景' }]}
+          >
+            <Radio.Group
+              value={selectedScene}
+              onChange={(e) => setSelectedScene(e.target.value)}
+            >
+              <Space direction="vertical" style={{ width: '100%' }} size="small">
+                <div
+                  style={{
+                    ...styles.radioCard,
+                    borderColor: selectedScene === 'unverified' ? PRIMARY_COLOR : '#d9d9d9',
+                    backgroundColor: selectedScene === 'unverified' ? `${PRIMARY_COLOR}08` : 'transparent',
+                  }}
+                >
+                  <Radio value="unverified">
+                    领券未核销（触达人群为画布上一轮发券后，领券但未核销的用户）
+                  </Radio>
+                </div>
+                <div
+                  style={{
+                    ...styles.radioCard,
+                    borderColor: selectedScene === 'verified' ? PRIMARY_COLOR : '#d9d9d9',
+                    backgroundColor: selectedScene === 'verified' ? `${PRIMARY_COLOR}08` : 'transparent',
+                  }}
+                >
+                  <Radio value="verified">
+                    领券已核销（触达人群为画布上一轮发券后，领券且已核销的用户）
+                  </Radio>
+                </div>
+              </Space>
+            </Radio.Group>
+          </Form.Item>
+
+          {/* 已发放的优惠券 */}
+          <Form.Item
+            label="已发放的优惠券"
+            name="couponIds"
+            rules={[{ required: true, message: '请选择优惠券' }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="请选择优惠券"
+              disabled={!selectedCanvas || selectedCanvas.coupons.length === 0}
+              allowClear
+            >
+              {selectedCanvas?.coupons.map(coupon => (
+                <Option key={coupon.id} value={coupon.id}>
+                  {coupon.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {/* 发券日期 */}
+          <Form.Item
+            label={<span><span style={{ color: '#ff4d4f', marginRight: '4px' }}>*</span>发券日期</span>}
+            rules={[{ required: true, message: '请选择发券日期' }]}
+          >
+            {isLoop ? (
+              <Form.Item name="dateRange" noStyle>
+                <DatePicker.RangePicker placeholder={['开始日期', '结束日期']} style={{ width: '100%' }} />
+              </Form.Item>
+            ) : (
+              <Form.Item name="issueDate" noStyle>
+                <DatePicker disabled style={{ width: '100%' }} />
+              </Form.Item>
+            )}
+          </Form.Item>
+
+          <Divider style={styles.dividerStyle} />
+
+          {/* 区域二：人群信息 */}
+          <div style={styles.sectionTitle}>配置二次触达人群信息</div>
+
+          {/* 二次触达人群名称 */}
+          <Form.Item
+            label="二次触达人群名称"
+            name="audienceName"
+            rules={[{ required: true, message: '请输入人群名称' }]}
+          >
+            <Input placeholder="请输入人群名称" />
+          </Form.Item>
+
+          {/* 是否更新及有效期 */}
+          <Form.Item
+            label={<span><span style={{ color: '#ff4d4f', marginRight: '4px' }}>*</span>自动更新</span>}
+            rules={[{ required: true, message: '请选择是否开启自动更新' }]}
+          >
+            <Space>
+              <Switch
+                checked={isUpdateEnabled}
+                onChange={handleUpdateSwitchChange}
+              />
+              <span>{isUpdateEnabled ? '开启' : '关闭'}</span>
+            </Space>
+            {isUpdateEnabled && (
+              <Space style={{ marginLeft: '16px' }}>
+                <Text type="secondary">人群有效期：</Text>
+                <Form.Item name="expiryDate" noStyle>
+                  <DatePicker />
+                </Form.Item>
+              </Space>
+            )}
+          </Form.Item>
+
+        </Form>
+      </Modal>
+    </ConfigProvider>
+  );
+};
+
+export default RetargetConfigModal;

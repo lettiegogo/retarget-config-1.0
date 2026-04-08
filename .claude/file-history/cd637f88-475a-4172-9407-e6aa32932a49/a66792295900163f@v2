@@ -1,0 +1,29 @@
+import { ConfigProvider } from 'antd';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import BasicLayout from './layouts/BasicLayout';
+import CanvasList from './pages/CanvasList';
+import SecondReachConfig from './pages/SecondReachConfig';
+
+function App() {
+  return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#1677ff',
+        },
+      }}
+    >
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<BasicLayout />}>
+            <Route index element={<CanvasList />} />
+            <Route path="canvas-list" element={<CanvasList />} />
+            <Route path="second-reach-config/:canvasId" element={<SecondReachConfig />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ConfigProvider>
+  );
+}
+
+export default App;
