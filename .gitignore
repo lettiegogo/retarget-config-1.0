@@ -21,13 +21,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Claude
-.claude/backups/
-.claude/cache/
-.claude/sessions/
-.claude/tasks/
-.claude/telemetry/
-.claude/history.jsonl
+# Claude - exclude entire .claude directory
+.claude/
 
 # System files - exclude all user profile files
 .MUMUVMM/
