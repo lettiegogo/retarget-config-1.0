@@ -31,7 +31,7 @@
     "agent-flag": 7,
     "feedback-command": 7
   },
-  "promptQueueUseCount": 6,
+  "promptQueueUseCount": 7,
   "firstStartTime": "2026-03-27T08:50:06.026Z",
   "opusProMigrationComplete": true,
   "sonnet1m45MigrationComplete": true,

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "homepage": "https://lettiegogo.github.io/retarget-config-1.0/",
+  "homepage": "https://liuyuting.github.io/二次触达 1.0/",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
